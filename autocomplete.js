@@ -42,36 +42,46 @@
         var fetch = options.fetch;
 
 
-        $(input).attr("autocomplete", "off");
+       $(input).attr("autocomplete", "off");
 
         if (options.list === undefined) {
-            list = this.data("list");
+            options.list = this.data("list") || this.attr["list"];
         }
-        else {
-            list = options.list;
+        if (!options.list || options.list === "") {
+            console.error("Per attivare l'autocomplete è necessario provvedere una lista di stringhe o un oggetto datalist.");
+            return;
         }
 
-        if (typeof list === "string") {
-            var obj = $(list);
-            //se è un data list devo recuperare tutte le option value e text
-            if (obj) {
-                list = [];
-                $(obj).children().each(function (index) {
-                    let value = $(this).val();
-                    let text = $(this).text();
-                    if (value !== text) {
-                        list.push({ value: value, text: text });
-                    }
-                    else {
-                        list.push(value);
-                    }
-                });
-            }
-            else {
-                console.error("Non riesco a trovare l'elemento con id '" + this.list + "' per recuperare i valori di autocomplete");
-                return;
-            }
-            
+        //is it a function?
+        var fn = window[options.list];
+        //is it an object??
+        var obj = document.getElementById(options.list) || $(options.list).get(0);
+        //is it list of strings??
+        var strings = options.list.split(',');
+
+        if (fn) {
+            list = [];
+            fn(list);
+        }
+        else if (obj) {
+            list = [];
+            $(obj).children().each(function (index) {
+                //if it is a datalist or a select, contains an option tag with value and text
+                let value = $(this).val();
+                let text = $(this).text();
+                if (value !== text) {
+                    list.push({ value: value, text: text });
+                }
+                else {
+                    list.push(value);
+                }
+            });
+        }
+        else if (strings.length > 1) {
+            list = strings;
+        }
+        else {
+            console.error("Cannot initialize autocomplete items");
         }
 
         raiseCallback(init);
